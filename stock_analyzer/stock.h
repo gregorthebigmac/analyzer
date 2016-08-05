@@ -13,12 +13,16 @@ class stock {
 public:
 	stock();
 	~stock();
+
 	// getters
 	string get_name() { return m_name; }
 	int get_days() { return m_number_of_continuous_running_days; }
 	string get_symbol() { return m_symbol; }
-	void get_change();
+	float get_size_of_change() { return m_change.size(); }
+	float get_change();
 	int get_num_errors() { return m_err_report.size(); }
+	float get_current_price();
+	float get_percent_change();
 
 	// setters
 	void set_name(string symbol) { m_symbol = symbol; }
@@ -27,13 +31,14 @@ public:
 	void load_data();
 	void parse_data();
 	void bad_data(string data);
-	float calculate_daily_avg_price_diff();
+	float calculate_daily_avg_percentage_diff();
 	void make_a_date();
 
 	// debug
 	void dump_data();
 	void print_error_report();
 	void write_error_log(ofstream &fout);
+	void write_element_sizes_to_file(ofstream& fout);
 
 private:
 	// easiest way to create an integer date from the string m_str_date

@@ -8,18 +8,39 @@ stock::stock() {	// ctor
 stock::~stock() {}	// dtor
 
 // getters
-void stock::get_change() {
-	cout << "List of daily price changes for [" << m_symbol << "]:" << endl;
-	for (int i = 0; i < m_change.size(); i++) {
-		cout << "[" << m_last_trade_date[i] << "] [" << m_change[i] << "]" << endl;
+float stock::get_current_price() {
+	if (m_last_trade_price.size() == 0) {
+		return 0;
+	}
+	else {
+		return m_last_trade_price[(m_last_trade_price.size() - 1)];
 	}
 }
+
+float stock::get_change() {
+	if (m_change.size() == 0) {
+		return 0;
+	}
+	else {
+		return m_change[(m_change.size()-1)];
+	}
+}
+
+float stock::get_percent_change() {
+	if (m_change.size() == 0) {
+		return 0;
+	}
+	else {
+		return m_percent_change[(m_percent_change.size() - 1)];
+	}
+}
+
 // setters
 
 // todo---------------------------------------------------------------------------------------------//
 void stock::load_data() {
 	ifstream fin;
-	string filename = "U:\\html\\ggi_root\\home\\greyhau1\\scraper\\st_log\\" + m_symbol + ".csv";
+	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\test\\" + m_symbol + ".csv";
 	fin.open(filename.c_str());
 	if (fin.is_open()) {
 		m_number_of_continuous_running_days = 0;
@@ -30,6 +51,7 @@ void stock::load_data() {
 			temp.push_back(temp2);
 		}
 		fin.close();
+		temp.pop_back();
 		for (int i = 0; i < temp.size(); i++) {
 			string temp2 = temp[i];
 			for (int i = 0; i < 57; i++) {
@@ -40,17 +62,18 @@ void stock::load_data() {
 					temp2.erase(0, found);
 				}
 				else {
-					cout << "[" << i << "]" << " data not found!" << endl;
-					bad_data(temp2);
-					break;
-				}
-			}
+					if (temp2.empty()) {
+						break;
+					}
+					else {
+						cout << "[" << i << "]" << " data not found!" << endl;
+						bad_data(temp2);
+						break;
+			}}}
 			if (m_data.size() == 57) {
 				m_number_of_continuous_running_days++;
 				parse_data();
-			}
-		}
-	}
+	}}}
 	else {
 		cout << "Opening file [" << m_symbol << ".csv]...";
 		cout << "[fail]" << endl;
@@ -68,20 +91,15 @@ void stock::parse_data() {
 				found = m_data[i].find("\"");
 				if (found != string::npos) {
 					m_data[i].erase(found, 1);
-				}
-			}
-		}
-	}
-	int d = 0;	// Tracking which makes changes to the function easier.
+	}}}}
+	int d = 0;	// Tracking the element of m_data with "d" makes changes to the function easier.
 	string sd;
 	
-
 	// commented out for debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//m_str_date = m_data[d];		// adding the date to each entry for better tracking purposes
 	//make_a_date();				// converting the string "date" to a struct of ints, using struct date_stamp{}
 	//sd = boost::lexical_cast<string>(++d);	// incrementing d and converting it to a string for error reporting
 	// end of commented out section for debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 	// d = 1
 	m_error = m_data[d];		// error report from yahoo, in case the stock moved or no longer exists
@@ -94,9 +112,11 @@ void stock::parse_data() {
 		if (m_data[d] != "N/A") {
 			string temp = "[" + m_symbol + "]" + ".csv: m_ask failed to cast from string to float.";
 			m_err_report.push_back(temp);
-			temp = "m_data[" + sd +  "] = [" + m_data[d] + "]";
+			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_ask.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 3
@@ -107,9 +127,11 @@ void stock::parse_data() {
 		if (m_data[d] != "N/A") {
 			string temp = "[" + m_symbol + "]" + ".csv: m_average_daily_volume failed to cast from string to int.";
 			m_err_report.push_back(temp);
-			temp = "m_data[" + sd  + "] = [" + m_data[d] + "]";
+			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_average_daily_volume.push_back(0);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 4
@@ -123,6 +145,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_ask_size.push_back(0);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 5
@@ -136,6 +160,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_bid.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 6
@@ -149,6 +175,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_book_value.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 7
@@ -162,6 +190,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_bid_size.push_back(0);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 8
@@ -182,10 +212,9 @@ void stock::parse_data() {
 						temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 						m_err_report.push_back(temp);
 					}
-				}
-			}
-		}
-	}
+						// experimental!!!!
+						m_percent_change.push_back(0.00);
+	}}}}
 	else {
 		if (temp != "N/A") {
 			cout << "I don't know what's going on here. I'm writing an error report." << endl;
@@ -196,6 +225,8 @@ void stock::parse_data() {
 			temp2 = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp2);
 		}
+			// experimental!!!!
+			m_percent_change.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 9
@@ -208,6 +239,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_change.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 10
@@ -221,6 +254,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_dividend_share.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 11
@@ -237,6 +272,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_earnings_share.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 13
@@ -250,6 +287,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_eps_estimate_current_year.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 14
@@ -263,6 +302,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_eps_estimate_next_year.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 15
@@ -276,6 +317,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_eps_estimate_next_quarter.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 16
@@ -292,6 +335,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_day_low.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 18
@@ -305,6 +350,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_day_high.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 19
@@ -318,6 +365,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_52_week_low.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 20
@@ -340,6 +389,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_change_from_52_week_low.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 24
@@ -357,6 +408,8 @@ void stock::parse_data() {
 				temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 				m_err_report.push_back(temp);
 			}
+				// experimental!!!!
+				m_percent_change_from_52_week_low.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -371,6 +424,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_52_week_high.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 26
@@ -384,6 +439,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_last_trade_size.push_back(0);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 27
@@ -397,6 +454,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_change_from_52_week_high.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 28
@@ -414,6 +473,8 @@ void stock::parse_data() {
 				temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 				m_err_report.push_back(temp);
 			}
+				// experimental!!!!
+				m_percent_change_from_52_week_high.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -428,6 +489,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_last_trade_price.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 30
@@ -444,6 +507,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_50_day_moving_average.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 32
@@ -457,6 +522,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_200_day_moving_average.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 33
@@ -470,6 +537,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_change_from_200_day_moving_average.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 34
@@ -487,6 +556,8 @@ void stock::parse_data() {
 				temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 				m_err_report.push_back(temp);
 			}
+				// experimental!!!!
+				m_percent_change_from_200_day_moving_average.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -502,6 +573,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_change_from_50_day_moving_average.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 36
@@ -519,6 +592,8 @@ void stock::parse_data() {
 				temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 				m_err_report.push_back(temp);
 			}
+				// experimental!!!!
+				m_percent_change_from_50_day_moving_average.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -533,6 +608,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_open.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 38
@@ -546,6 +623,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_previous_close.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 39
@@ -563,6 +642,8 @@ void stock::parse_data() {
 				temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 				m_err_report.push_back(temp);
 			}
+				// experimental!!!!
+				m_change_in_Percent.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -577,6 +658,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_price_sales.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 41
@@ -590,6 +673,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_price_book.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 42
@@ -606,6 +691,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_pe_ratio.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 44
@@ -622,6 +709,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_peg_ratio.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 46
@@ -635,6 +724,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_price_of_eps_estimate_current_year.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 47
@@ -648,6 +739,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_price_of_eps_estimate_next_year.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 48
@@ -667,6 +760,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_short_ratio.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 51
@@ -683,6 +778,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_1_yr_target_price.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 53
@@ -696,6 +793,8 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_volume.push_back(0);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 54
@@ -715,30 +814,27 @@ void stock::parse_data() {
 			temp = "m_data[" + sd + "] = [" + m_data[d] + "]";
 			m_err_report.push_back(temp);
 		}
+			// experimental!!!!
+			m_dividend_yield.push_back(0.00);
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 57
 	m_name = m_data[d];	// this data will never change, so it doesn't need to be a vector
 	d = 0;
 	m_data.resize(d);
-	//cout << "So far, so good..." << endl;
-	//system("PAUSE");
 }
 
 void stock::bad_data(string data) {
 	m_err_report.push_back(data);
 }
 
-float stock::calculate_daily_avg_price_diff() {
+float stock::calculate_daily_avg_percentage_diff() {
 	float avg = 0.0;
-	if (m_change.size() > 0) {
-		cout << "[" << m_symbol << "] listing of m_change: " << endl;
-		for (int i = 1; i < (m_change.size() - 1); i++) {		// this loop starts at 1 to avoid a "vector out of range" error
-			avg = m_change[i] + avg;
-			cout << "avg = [" << avg << "]" << endl;
+	if (m_percent_change.size() > 0) {
+		for (int i = 0; i < (m_percent_change.size()); i++) {
+			avg = m_percent_change[i] + avg;
 		}
-		avg = avg / m_change.size();
-		cout << "average returned = [" << avg << "]" << endl;
+		avg = avg / m_percent_change.size();
 		return avg;
 	}
 	else {
@@ -809,4 +905,62 @@ void stock::write_error_log(ofstream &fout) {
 	else {
 		cout << "the fout you passed to stock::write_error_log didn't take. Check it out." << endl;
 	}
+}
+
+void stock::write_element_sizes_to_file(ofstream& fout) {
+	fout << m_symbol << ","
+		//<< m_date.size() << ","					// this hasn't been implemented yet, but will be soon.
+		<< m_ask.size() << ","
+		<< m_average_daily_volume.size() << ","
+		<< m_ask_size.size() << ","
+		<< m_bid.size() << ","
+		<< m_book_value.size() << ","
+		<< m_bid_size.size() << ","
+		<< m_percent_change.size() << ","
+		<< m_change.size() << ","
+		<< m_dividend_share.size() << ","
+		<< m_last_trade_date.size() << ","
+		<< m_earnings_share.size() << ","
+		<< m_eps_estimate_current_year.size() << ","
+		<< m_eps_estimate_next_year.size() << ","
+		<< m_eps_estimate_next_quarter.size() << ","
+		<< m_float_shares.size() << ","
+		<< m_day_low.size() << ","
+		<< m_day_high.size() << ","
+		<< m_52_week_low.size() << ","
+		<< m_market_capitalization.size() << ","
+		<< m_shares_outstanding.size() << ","
+		<< m_EBITDA.size() << ","
+		<< m_change_from_52_week_low.size() << ","
+		<< m_percent_change_from_52_week_low.size() << ","
+		<< m_52_week_high.size() << ","
+		<< m_last_trade_size.size() << ","
+		<< m_change_from_52_week_high.size() << ","
+		<< m_percent_change_from_52_week_high.size() << ","
+		<< m_last_trade_price.size() << ","
+		<< m_day_range.size() << ","
+		<< m_50_day_moving_average.size() << ","
+		<< m_200_day_moving_average.size() << ","
+		<< m_change_from_200_day_moving_average.size() << ","
+		<< m_percent_change_from_200_day_moving_average.size() << ","
+		<< m_change_from_50_day_moving_average.size() << ","
+		<< m_percent_change_from_50_day_moving_average.size() << ","
+		<< m_open.size() << ","
+		<< m_previous_close.size() << ","
+		<< m_change_in_Percent.size() << ","
+		<< m_price_sales.size() << ","
+		<< m_price_book.size() << ","
+		<< m_ex_dividend_date.size() << ","
+		<< m_pe_ratio.size() << ","
+		<< m_dividend_pay_date.size() << ","
+		<< m_peg_ratio.size() << ","
+		<< m_price_of_eps_estimate_current_year.size() << ","
+		<< m_price_of_eps_estimate_next_year.size() << ","
+		<< m_revenue.size() << ","
+		<< m_short_ratio.size() << ","
+		<< m_last_trade_time.size() << ","
+		<< m_1_yr_target_price.size() << ","
+		<< m_volume.size() << ","
+		<< m_52_week_range.size() << ","
+		<< m_dividend_yield.size() << ",";
 }
