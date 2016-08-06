@@ -94,7 +94,7 @@ private:
 	vector<float> m_percent_change_from_50_day_moving_average;
 	vector<float> m_open;
 	vector<float> m_previous_close;
-	vector<float> m_change_in_Percent;	// fix m_data[7]
+	vector<float> m_change_in_percent;	// fix m_data[7]
 	vector<float> m_price_sales;
 	vector<float> m_price_book;
 	vector<string> m_ex_dividend_date;

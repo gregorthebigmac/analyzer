@@ -27,11 +27,11 @@ float stock::get_change() {
 }
 
 float stock::get_percent_change() {
-	if (m_change.size() == 0) {
+	if (m_change_in_percent.size() == 0) {
 		return 0;
 	}
 	else {
-		return m_percent_change[(m_percent_change.size() - 1)];
+		return m_change_in_percent[(m_change_in_percent.size() - 1)];
 	}
 }
 
@@ -633,7 +633,7 @@ void stock::parse_data() {
 	if (found != string::npos) {
 		temp.erase(found, 1);
 		try {
-			m_change_in_Percent.push_back(boost::lexical_cast<float>(temp));
+			m_change_in_percent.push_back(boost::lexical_cast<float>(temp));
 		}
 		catch (boost::bad_lexical_cast) {
 			if (m_data[d] != "N/A") {
@@ -643,7 +643,7 @@ void stock::parse_data() {
 				m_err_report.push_back(temp);
 			}
 				// experimental!!!!
-				m_change_in_Percent.push_back(0.00);
+				m_change_in_percent.push_back(0.00);
 		}
 	}
 	sd = boost::lexical_cast<string>(++d);
@@ -830,11 +830,11 @@ void stock::bad_data(string data) {
 
 float stock::calculate_daily_avg_percentage_diff() {
 	float avg = 0.0;
-	if (m_percent_change.size() > 0) {
-		for (int i = 0; i < (m_percent_change.size()); i++) {
-			avg = m_percent_change[i] + avg;
+	if (m_change_in_percent.size() > 0) {
+		for (int i = 0; i < (m_change_in_percent.size()); i++) {
+			avg = m_change_in_percent[i] + avg;
 		}
-		avg = avg / m_percent_change.size();
+		avg = avg / m_change_in_percent.size();
 		return avg;
 	}
 	else {
@@ -947,7 +947,7 @@ void stock::write_element_sizes_to_file(ofstream& fout) {
 		<< m_percent_change_from_50_day_moving_average.size() << ","
 		<< m_open.size() << ","
 		<< m_previous_close.size() << ","
-		<< m_change_in_Percent.size() << ","
+		<< m_change_in_percent.size() << ","
 		<< m_price_sales.size() << ","
 		<< m_price_book.size() << ","
 		<< m_ex_dividend_date.size() << ","
