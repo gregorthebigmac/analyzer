@@ -23,7 +23,8 @@ public:
 	int get_num_errors() { return m_err_report.size(); }
 	float get_current_price();
 	float get_percent_change();
-
+	float get_52_wk_low();
+	float get_percent_change_from_52_week_low();
 	// setters
 	void set_name(string symbol) { m_symbol = symbol; }
 
@@ -63,7 +64,7 @@ private:
 	vector<float> m_bid;
 	vector<float> m_book_value;
 	vector<int> m_bid_size;
-	vector<float> m_percent_change;
+	//vector<float> m_percent_change;	// test: Phasing this out
 	vector<float> m_change;
 	vector<float> m_dividend_share;
 	vector<string> m_last_trade_date;

@@ -9,11 +9,11 @@ stock::~stock() {}	// dtor
 
 // getters
 float stock::get_current_price() {
-	if (m_last_trade_price.size() == 0) {
-		return 0;
-	}
-	else {
+	try {
 		return m_last_trade_price[(m_last_trade_price.size() - 1)];
+	}
+	catch (std::out_of_range) {
+		return -666.666;
 	}
 }
 
@@ -35,12 +35,29 @@ float stock::get_percent_change() {
 	}
 }
 
+float stock::get_52_wk_low() {
+	try {
+		return m_52_week_low[m_52_week_low.size() - 1];
+	}
+	catch (std::out_of_range) {
+		return -666.666;
+	}
+}
+
+float stock::get_percent_change_from_52_week_low() {
+	try {
+		return m_percent_change_from_52_week_low[m_percent_change_from_52_week_low.size() - 1];
+	}
+	catch (std::out_of_range) {
+		return -666.666;
+	}
+}
 // setters
 
 // todo---------------------------------------------------------------------------------------------//
 void stock::load_data() {
 	ifstream fin;
-	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\test\\" + m_symbol + ".csv";
+	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\" + m_symbol + ".csv";
 	fin.open(filename.c_str());
 	if (fin.is_open()) {
 		m_number_of_continuous_running_days = 0;
@@ -54,7 +71,7 @@ void stock::load_data() {
 		temp.pop_back();
 		for (int i = 0; i < temp.size(); i++) {
 			string temp2 = temp[i];
-			for (int i = 0; i < 57; i++) {
+			for (int i = 0; i < 58; i++) {
 				int found = temp2.find(",");
 				if (found != string::npos) {
 					m_data.push_back(temp2.substr(0, found));
@@ -70,7 +87,7 @@ void stock::load_data() {
 						bad_data(temp2);
 						break;
 			}}}
-			if (m_data.size() == 57) {
+			if (m_data.size() == 58) {
 				m_number_of_continuous_running_days++;
 				parse_data();
 	}}}
@@ -95,11 +112,9 @@ void stock::parse_data() {
 	int d = 0;	// Tracking the element of m_data with "d" makes changes to the function easier.
 	string sd;
 	
-	// commented out for debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//m_str_date = m_data[d];		// adding the date to each entry for better tracking purposes
-	//make_a_date();				// converting the string "date" to a struct of ints, using struct date_stamp{}
-	//sd = boost::lexical_cast<string>(++d);	// incrementing d and converting it to a string for error reporting
-	// end of commented out section for debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	m_str_date = m_data[d];		// adding the date to each entry for better tracking purposes
+	make_a_date();				// converting the string "date" to a struct of ints, using struct date_stamp{}
+	sd = boost::lexical_cast<string>(++d);	// incrementing d and converting it to a string for error reporting
 
 	// d = 1
 	m_error = m_data[d];		// error report from yahoo, in case the stock moved or no longer exists
@@ -195,6 +210,7 @@ void stock::parse_data() {
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 8
+	/* Phasing this out, since the data is found elsewhere (number 39)
 	string temp = m_data[d];
 	if (temp[0] == '+' || temp[0] == '-') {
 		temp.erase(0, 1);
@@ -228,6 +244,7 @@ void stock::parse_data() {
 			// experimental!!!!
 			m_percent_change.push_back(0.00);
 	}
+	*/
 	sd = boost::lexical_cast<string>(++d);
 	// d = 9
 	try {
@@ -394,7 +411,7 @@ void stock::parse_data() {
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 24
-	temp = m_data[d];
+	string temp = m_data[d];
 	int found = temp.find("%");
 	if (found != string::npos) {
 		temp.erase(found, 1);
@@ -562,7 +579,6 @@ void stock::parse_data() {
 	}
 	sd = boost::lexical_cast<string>(++d);
 	// d = 35
-
 	try {
 		m_change_from_50_day_moving_average.push_back(boost::lexical_cast<float>(m_data[d]));
 	}
@@ -843,42 +859,43 @@ float stock::calculate_daily_avg_percentage_diff() {
 }
 
 void stock::make_a_date() {
+	string temp = m_str_date;
 	int x = m_date.size();
 	string iteration = boost::lexical_cast<string>(x);
 	m_date.resize((x+1));
-	int found = m_str_date.find("-");
+	int found = temp.find("-");
 	if (found != string::npos) {
-		string temp = m_str_date.substr(0, found);
-		m_str_date.erase(0, (found + 1));
+		string temp2 = temp.substr(0, found);
+		temp.erase(0, (found + 1));
 		try {
-			m_date[x].year = (boost::lexical_cast<int>(temp));
+			m_date[x].year = (boost::lexical_cast<int>(temp2));
 		}
 		catch (boost::bad_lexical_cast) {
-			string temp2 = "Year in m_date[" + iteration + "] in " + m_symbol + " failed to cast from string to int:";
+			string temp3 = "Year in m_date[" + iteration + "] in " + m_symbol + " failed to cast from string to int:";
+			m_err_report.push_back(temp3);
 			m_err_report.push_back(temp2);
-			m_err_report.push_back(temp);
 		}
 	}
-	found = m_str_date.find("-");
+	found = temp.find("-");
 	if (found != string::npos) {
-		string temp = m_str_date.substr(0, found);
-		m_str_date.erase(0, (found + 1));
+		string temp2 = temp.substr(0, found);
+		temp.erase(0, (found + 1));
 		try {
-			m_date[x].month = (boost::lexical_cast<int>(temp));
+			m_date[x].month = (boost::lexical_cast<int>(temp2));
 		}
 		catch (boost::bad_lexical_cast) {
-			string temp2 = "Month in m_date[" + iteration + "] in " + m_symbol + "failed to cast from string to int.";
+			string temp3 = "Month in m_date[" + iteration + "] in " + m_symbol + "failed to cast from string to int.";
+			m_err_report.push_back(temp3);
 			m_err_report.push_back(temp2);
-			m_err_report.push_back(temp);
 		}
 	}
 	try {
-		m_date[x].day = (boost::lexical_cast<int>(m_str_date));
+		m_date[x].day = (boost::lexical_cast<int>(temp));
 	}
 	catch (boost::bad_lexical_cast) {
-		string temp = "Day in m_date[" + iteration + "] in " + m_symbol + "failed to cast from string to int.";
+		string temp2 = "Day in m_date[" + iteration + "] in " + m_symbol + "failed to cast from string to int.";
+		m_err_report.push_back(temp2);
 		m_err_report.push_back(temp);
-		m_err_report.push_back(m_str_date);
 	}
 }
 
@@ -909,14 +926,14 @@ void stock::write_error_log(ofstream &fout) {
 
 void stock::write_element_sizes_to_file(ofstream& fout) {
 	fout << m_symbol << ","
-		//<< m_date.size() << ","					// this hasn't been implemented yet, but will be soon.
+		<< m_date.size() << ","
 		<< m_ask.size() << ","
 		<< m_average_daily_volume.size() << ","
 		<< m_ask_size.size() << ","
 		<< m_bid.size() << ","
 		<< m_book_value.size() << ","
 		<< m_bid_size.size() << ","
-		<< m_percent_change.size() << ","
+		//<< m_percent_change.size() << ","		// test: Phasing this out.
 		<< m_change.size() << ","
 		<< m_dividend_share.size() << ","
 		<< m_last_trade_date.size() << ","

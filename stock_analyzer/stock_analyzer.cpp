@@ -12,8 +12,11 @@ vector<stock> st;	// making a vector of objects from the stock class (see stock.
 void set_stock_symbols();
 void load_stock_data();
 void dump_errors();
-void analyze_stocks();
+void best_today();
+void best_avg();
+void prediction();
 void get_size_of_elements();
+string get_date();
 
 int main()
 {
@@ -22,8 +25,10 @@ int main()
 	cout << "setting stock symbols...[ok]" << endl;
 	cout << "Loading stock data..." << endl;
 	load_stock_data();
-	analyze_stocks();
-	get_size_of_elements();
+	best_today();
+	best_avg();
+	prediction();
+	//get_size_of_elements();
 	dump_errors();
     return 0;
 }
@@ -84,6 +89,7 @@ void dump_errors() {
 		for (int i = 0; i < st.size(); i++) {
 			if (st[i].get_num_errors() > 1) {
 				fout << "iteration [" << i << "] " << endl;
+				fout << "Error found in [" << st[i].get_symbol() << "]. Printing bad data recovered:" << endl;
 				st[i].write_error_log(fout);
 			}
 		}
@@ -105,7 +111,7 @@ void dump_errors() {
 	}
 }
 
-void analyze_stocks() {
+void best_avg() {
 	int days = 0;
 	for (int i = 0; i < st.size(); i++) {
 		if (days < st[i].get_days()) {
@@ -132,7 +138,31 @@ void analyze_stocks() {
 		}
 		unsorted_avg.erase(unsorted_avg.begin() + tracker[i]);
 	}
-	unsorted_avg.clear();
+	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\analyze\\best_avg-"
+		+ get_date() + ".csv";
+	ofstream fout;
+	cout << "Writing data to file...";
+	fout.open(filename.c_str());
+	if (fout.is_open()) {
+		cout << "[ok]" << endl;
+		cout << "Top 10 avg % increase over the last [" << days << "] days:" << endl;
+		fout << "Top 10 avg % increase over the last [" << days << "] days:" << endl;
+		cout << "i/Stock name/Percent Increase/Current Price" << endl;
+		fout << "Stock Name,Percent Increase,Current Price," << endl;
+		for (int i = 0; i < 10; i++) {
+			cout << tracker[i] << "/" << st[tracker[i]].get_symbol() << "/" << sorted_avg[i] << "%/"
+				<< "$" << st[tracker[i]].get_current_price() << endl;
+			fout << st[tracker[i]].get_symbol() << "," << sorted_avg[i] << "%,"
+				<< "$" << st[tracker[i]].get_current_price() << "," << endl;
+		}
+	}
+	else {
+		cout << "[fail]" << endl;
+	}
+	fout.close();
+}
+
+void best_today() {
 	vector<float> sorted_high_risk;
 	vector<int> tracker2;
 	sorted_high_risk.resize(10);
@@ -150,31 +180,12 @@ void analyze_stocks() {
 		}
 		unsorted_high_risk.erase(unsorted_high_risk.begin() + tracker2[i]);
 	}
-	unsorted_high_risk.clear();
-	
-	time_t t = time(0);   // get current date
-	struct tm now;
-	localtime_s(&now, &t);
-	string date = boost::lexical_cast<string>(now.tm_year + 1900) + "-"
-		+ boost::lexical_cast<string>(now.tm_mon + 1) + "-"
-		+ boost::lexical_cast<string>(now.tm_mday);
-	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\analyze\\"
-		+ date + ".csv";
+	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\analyze\\best_today-"
+		+ get_date() + ".csv";
 	ofstream fout;
 	cout << "Writing data to file...";
 	fout.open(filename.c_str());
 	if (fout.is_open()) {
-		cout << "[ok]" << endl;
-		cout << "Top 10 avg % increase over the last [" << days << "] days:" << endl;
-		fout << "Top 10 avg % increase over the last [" << days << "] days:" << endl;
-		cout << "i/Stock name/Percent Increase/Current Price" << endl;
-		fout << "Stock Name,Percent Increase,Current Price," << endl;
-		for (int i = 0; i < 10; i++) {
-			cout << tracker[i] << "/" << st[tracker[i]].get_symbol() << "/" << sorted_avg[i] << "%/"
-				<< "$" << st[tracker[i]].get_current_price() << endl;
-			fout << st[tracker[i]].get_symbol() << "," << sorted_avg[i] << "%,"
-				<< "$" << st[tracker[i]].get_current_price() << "," << endl;
-		}
 		cout << "Top 10 high risk/high return stocks of the day:" << endl;
 		cout << "i  /  Stock name/Percent Increase/Current Price" << endl;
 		fout << "Top 10 high risk/high return stocks of the day:" << endl;
@@ -188,6 +199,43 @@ void analyze_stocks() {
 	}
 	else {
 		cout << "[fail]" << endl;
+	}
+	fout.close();
+}
+
+void prediction() {
+	vector<float>difference_percent;
+	vector<int>diff_tracker;
+	vector<int>candidate_tracker;
+	string filename = "U:\\html\\ggi_root\\home2\\greyhau1\\scraper\\st_log\\analyze\\prediction-"
+		+ get_date() + ".csv";
+	ofstream fout;
+	fout.open(filename.c_str());
+	cout << "Gathering potential candidates:" << endl;
+	// grabbing all stocks that are within 11% of their 52 week low
+	for (int i = 0; i < st.size(); i++) {
+		float diff = ((st[i].get_current_price() - st[i].get_52_wk_low()) / st[i].get_52_wk_low()) * 100;
+		if ((diff < 11.0) && (diff > 0.0)) {
+			difference_percent.push_back(st[i].get_percent_change_from_52_week_low());
+			diff_tracker.push_back(i);
+		}
+	}
+	// grabbing all stocks within that list that have had a daily average price change that's net positive
+	for (int i = 0; i < difference_percent.size(); i++) {
+		if (st[diff_tracker[i]].calculate_daily_avg_percentage_diff() > 0.0) {
+			candidate_tracker.push_back(diff_tracker[i]);
+		}
+	}
+	// print it, and save it to file
+	cout << "stock / % + 52 week low / avg increase / current price" << endl;
+	fout << "stock,percent difference from 52 week low,average daily increase,current price," << endl;
+	for (int i = 0; i < candidate_tracker.size(); i++) {
+		cout << st[candidate_tracker[i]].get_symbol() << " / " << difference_percent[i] << " / "
+			<< st[candidate_tracker[i]].calculate_daily_avg_percentage_diff() << " / "
+			<< st[candidate_tracker[i]].get_current_price() << endl;
+		fout << st[candidate_tracker[i]].get_symbol() << "," << difference_percent[i] << ","
+			<< st[candidate_tracker[i]].calculate_daily_avg_percentage_diff() << ","
+			<< st[candidate_tracker[i]].get_current_price() << "," << endl;
 	}
 	fout.close();
 }
@@ -214,4 +262,14 @@ void get_size_of_elements() {
 		fout.close();
 	}
 	
+}
+
+string get_date() {
+	time_t t = time(0);   // get current date
+	struct tm now;
+	localtime_s(&now, &t);
+	string date = boost::lexical_cast<string>(now.tm_year + 1900) + "-"
+		+ boost::lexical_cast<string>(now.tm_mon + 1) + "-"
+		+ boost::lexical_cast<string>(now.tm_mday);
+	return date;
 }
